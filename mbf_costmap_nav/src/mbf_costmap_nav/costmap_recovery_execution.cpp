@@ -38,7 +38,13 @@
  *
  */
 #include <nav_core/recovery_behavior.h>
-#include <xmlrpcpp/XmlRpc.h>
+#include <ros/common.h>
+#if ROS_VERSION_MINIMUM(1,12,13)
+  #include <xmlrpcpp/XmlRpc.h>
+#else
+  #include <XmlRpc.h>
+#endif
+
 #include "nav_core_wrapper/wrapper_recovery_behavior.h"
 #include "mbf_costmap_nav/costmap_recovery_execution.h"
 

@@ -50,7 +50,12 @@ uint32_t WrapperGlobalPlanner::makePlan(const geometry_msgs::PoseStamped &start,
                                         double &cost,
                                         std::string &message)
 {
+#if ROS_VERSION_MINIMUM(1,12,13)
   bool success = nav_core_plugin_->makePlan(start, goal, plan, cost);
+#else
+  bool success = nav_core_plugin_->makePlan(start, goal, plan);
+  cost = 0.0;
+#endif
   message = success ? "Plan found" : "Planner failed";
   return success ? 0 : 50;  // SUCCESS | FAILURE
 }
