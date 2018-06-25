@@ -212,6 +212,15 @@ typedef boost::shared_ptr<dynamic_reconfigure::Server<mbf_abstract_nav::MoveBase
                                     std::vector<geometry_msgs::PoseStamped> &global_plan);
 
     /**
+     * @brief Transforms a target pose to the global frame (global_frame_) coord system.
+     * @param goal Target pose to be transformed.
+     * @param global_goal Output pose, which is then transformed to the global frame.
+     * @return true, if the transformation succeeded, false otherwise
+     */
+    bool transformGoalToGlobalFrame(const geometry_msgs::PoseStamped &goal,
+                                    geometry_msgs::PoseStamped &global_goal);
+
+    /**
      * @brief Utility method to fill the ExePath action result in a single line
      * @param outcome ExePath action outcome
      * @param message ExePath action message
