@@ -30,7 +30,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  simple_server_node.cpp
+ *  planner_action.h
  *
  *  authors:
  *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
@@ -38,32 +38,63 @@
  *
  */
 
-#include "mbf_simple_nav/simple_navigation_server.h"
-#include <mbf_utility/types.h>
-#include <tf2_ros/transform_listener.h>
+#ifndef MBF_ABSTRACT_NAV__PLANNER_ACTION_H_
+#define MBF_ABSTRACT_NAV__PLANNER_ACTION_H_
 
-int main(int argc, char **argv)
+#include "mbf_abstract_nav/abstract_action.h"
+#include "mbf_abstract_nav/abstract_planner_execution.h"
+#include "mbf_abstract_nav/robot_information.h"
+#include <actionlib/server/action_server.h>
+#include <mbf_msgs/GetPathAction.h>
+
+namespace mbf_abstract_nav{
+
+
+class PlannerAction : public AbstractAction<mbf_msgs::GetPathAction, AbstractPlannerExecution>
 {
-  ros::init(argc, argv, "mbf_simple_server");
+ public:
 
-  typedef boost::shared_ptr<mbf_simple_nav::SimpleNavigationServer> SimpleNavigationServerPtr;
+  typedef boost::shared_ptr<PlannerAction> Ptr;
 
-  ros::NodeHandle nh;
-  ros::NodeHandle private_nh("~");
+  PlannerAction(
+      const std::string& name,
+      const RobotInformation &robot_info
+  );
 
-  double cache_time;
-  private_nh.param("tf_cache_time", cache_time, 10.0);
+  void run(GoalHandle &goal_handle, AbstractPlannerExecution &execution);
 
-#ifdef USE_OLD_TF
-  TFPtr tf_listener_ptr(new TF(nh, ros::Duration(cache_time), true));
-#else
-  TFPtr tf_listener_ptr(new TF(ros::Duration(cache_time)));
-  tf2_ros::TransformListener tf_listener(*tf_listener_ptr);
-#endif 
-  
-  SimpleNavigationServerPtr controller_ptr(
-      new mbf_simple_nav::SimpleNavigationServer(tf_listener_ptr));
+ protected:
 
-  ros::spin();
-  return EXIT_SUCCESS;
+  /**
+   * @brief Publishes the given path / plan
+   * @param plan The plan, a list of stamped poses, to be published
+   */
+  void publishPath(std::vector<geometry_msgs::PoseStamped> &plan);
+
+  /**
+   * @brief Transforms a plan to the global frame (global_frame_) coord system.
+   * @param plan Input plan to be transformed.
+   * @param global_plan Output plan, which is then transformed to the global frame.
+   * @return true, if the transformation succeeded, false otherwise
+   */
+  bool transformPlanToGlobalFrame(std::vector<geometry_msgs::PoseStamped> &plan,
+                                  std::vector<geometry_msgs::PoseStamped> &global_plan);
+
+
+ private:
+
+  //! Publisher to publish the current goal pose, which is used for path planning
+  ros::Publisher current_goal_pub_;
+
+  //! Publisher to publish the current computed path
+  ros::Publisher path_pub_;
+
+  //! Path sequence counter
+  unsigned int path_seq_count_;
+};
+
+
 }
+
+
+#endif //MBF_ABSTRACT_NAV__PLANNER_ACTION_H_

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  abstract_controller_execution.tcc
+ *  abstract_controller_execution.cpp
  *
  *  authors:
  *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
@@ -39,17 +39,26 @@
  */
 
 #include "mbf_abstract_nav/abstract_controller_execution.h"
-#include <XmlRpcException.h>
 #include <mbf_msgs/ExePathResult.h>
-#include <boost/exception/diagnostic_information.hpp>
 
 namespace mbf_abstract_nav
 {
 
+  const double AbstractControllerExecution::DEFAULT_CONTROLLER_FREQUENCY = 100.0; // 100 Hz
 
   AbstractControllerExecution::AbstractControllerExecution(
-      boost::condition_variable &condition, const boost::shared_ptr<tf::TransformListener> &tf_listener_ptr) :
-      condition_(condition), tf_listener_ptr(tf_listener_ptr), state_(STOPPED), moving_(false), outcome_(255)
+      const std::string name,
+      const mbf_abstract_core::AbstractController::Ptr& controller_ptr,
+      const ros::Publisher& vel_pub,
+      const ros::Publisher& goal_pub,
+      const TFPtr &tf_listener_ptr,
+      const MoveBaseFlexConfig &config,
+      boost::function<void()> setup_fn,
+      boost::function<void()> cleanup_fn) :
+    AbstractExecutionBase(name, setup_fn, cleanup_fn),
+      controller_(controller_ptr), tf_listener_ptr(tf_listener_ptr), state_(INITIALIZED),
+      moving_(false), max_retries_(0), patience_(0), vel_pub_(vel_pub), current_goal_pub_(goal_pub),
+      calling_duration_(boost::chrono::microseconds(static_cast<int>(1e6 / DEFAULT_CONTROLLER_FREQUENCY)))
   {
     ros::NodeHandle nh;
     ros::NodeHandle private_nh("~");
@@ -62,147 +71,48 @@ namespace mbf_abstract_nav
     private_nh.param("angle_tolerance", angle_tolerance_, M_PI / 18.0);
     private_nh.param("tf_timeout", tf_timeout_, 1.0);
 
-    // init cmd_vel publisher for the robot velocity t
-    vel_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+    // dynamically reconfigurable parameters
+    reconfigure(config);
   }
-
 
   AbstractControllerExecution::~AbstractControllerExecution()
   {
   }
 
-
-  bool AbstractControllerExecution::initialize()
+  bool AbstractControllerExecution::setControllerFrequency(double frequency)
   {
-    return loadPlugins();
-  }
-
-  bool AbstractControllerExecution::loadPlugins()
-  {
-    ros::NodeHandle private_nh("~");
-
-    XmlRpc::XmlRpcValue controllers_param_list;
-    if(!private_nh.getParam("controllers", controllers_param_list))
+    // set the calling duration by the moving frequency
+    if (frequency <= 0.0)
     {
-      ROS_WARN_STREAM("No controllers configured! - Use the param \"controllers\", which must be a list of tuples with a name and a type.");
+      ROS_ERROR("Controller frequency must be greater than 0.0! No change of the frequency!");
       return false;
     }
-
-    try
-    {
-      for (int i = 0; i < controllers_param_list.size(); i++)
-      {
-        XmlRpc::XmlRpcValue elem = controllers_param_list[i];
-
-        std::string name = elem["name"];
-        std::string type = elem["type"];
-
-        if (controllers_.find(name) != controllers_.end())
-        {
-          ROS_ERROR_STREAM("The controller \"" << name << "\" has already been loaded! Names must be unique!");
-          return false;
-        }
-        // load and init
-        mbf_abstract_core::AbstractController::Ptr controller_ptr = loadControllerPlugin(type);
-        if(controller_ptr && initPlugin(name, controller_ptr))
-        {
-          // set default controller to the first in the list
-          if(!controller_)
-          {
-            controller_ = controller_ptr;
-            plugin_name_ = name;
-            setState(INITIALIZED);
-          }
-
-          controllers_.insert(
-              std::pair<std::string, mbf_abstract_core::AbstractController::Ptr>(name, controller_ptr));
-
-          controllers_type_.insert(std::pair<std::string, std::string>(name, type)); // save name to type mapping
-
-          ROS_INFO_STREAM("The controller with the type \"" << type << "\" has been loaded and initialized"
-              << " successfully under the name \"" << name << "\".");
-
-        }
-        else
-        {
-          ROS_ERROR_STREAM("Could not load and initialize the plugin with the name \""
-              << name << "\" and the type \"" << type << "\"!");
-        }
-      }
-    }
-    catch (XmlRpc::XmlRpcException &e)
-    {
-      ROS_ERROR_STREAM("Invalid parameter structure. The \"controllers\" parameter has to be a list of structs "
-                           << "with fields \"name\" and \"type\" of !");
-      ROS_ERROR_STREAM(e.getMessage());
-      return false;
-    }
-    // is there any controller initialized?
-    return controller_ ? true : false;
-  }
-
-  bool AbstractControllerExecution::switchController(const std::string& name)
-  {
-    if(name == plugin_name_)
-    {
-      ROS_DEBUG_STREAM("No controller switch necessary, \"" << name << "\" already set.");
-      return true;
-    }
-    std::map<std::string, mbf_abstract_core::AbstractController::Ptr>::iterator new_controller
-        = controllers_.find(name);
-    if(new_controller != controllers_.end())
-    {
-      plugin_name_ = new_controller->first;
-      controller_ = new_controller->second;
-      new_plan_ = true;  // ensure we reset the current plan (if any) for the new controller
-      ROS_INFO_STREAM("Switched the controller plugin to \"" << new_controller->first
-          << "\" with the type \"" << controllers_type_[new_controller->first] << "\".");
-      return true;
-    }
-    else
-    {
-      ROS_WARN_STREAM("The controller \"" << name << "\" has not yet been loaded!"
-          << " No switch of the controller!");
-      return false;
-    }
+    calling_duration_ = boost::chrono::microseconds(static_cast<int>(1e6 / frequency));
+    return true;
   }
 
   void AbstractControllerExecution::reconfigure(const MoveBaseFlexConfig &config)
   {
-    boost::recursive_mutex::scoped_lock sl(configuration_mutex_);
-
+    boost::lock_guard<boost::mutex> lock_guard(configuration_mutex_);
     // Timeout granted to the local planner. We keep calling it up to this time or up to max_retries times
     // If it doesn't return within time, the navigator will cancel it and abort the corresponding action
     patience_ = ros::Duration(config.controller_patience);
 
-    // set the calling duration by the moving frequency
-    if (config.controller_frequency > 0.0)
-      calling_duration_ = boost::chrono::microseconds((int)(1e6 / config.controller_frequency));
-    else
-      ROS_ERROR("Movement frequency must be greater than 0.0!");
+    setControllerFrequency(config.controller_frequency);
 
     max_retries_ = config.controller_max_retries;
   }
 
 
-  bool AbstractControllerExecution::startMoving()
+  bool AbstractControllerExecution::start()
   {
     setState(STARTED);
     if (moving_)
     {
       return false; // thread is already running.
     }
-    outcome_ = 255;
-    message_ = "";
     moving_ = true;
-    thread_ = boost::thread(&AbstractControllerExecution::run, this);
-    return true;
-  }
-
-
-  void AbstractControllerExecution::stopMoving()
-  {
-    thread_.interrupt();
+    return AbstractExecutionBase::start();
   }
 
 
@@ -252,7 +162,7 @@ namespace mbf_abstract_nav
   bool AbstractControllerExecution::computeRobotPose()
   {
     bool tf_success = mbf_utility::getRobotPose(*tf_listener_ptr, robot_frame_, global_frame_,
-                                                     ros::Duration(tf_timeout_), robot_pose_);
+                                                ros::Duration(tf_timeout_), robot_pose_);
     // would be 0 if not, as we ask tf listener for the last pose available
     robot_pose_.header.stamp = ros::Time::now();
     if (!tf_success)
@@ -326,10 +236,22 @@ namespace mbf_abstract_nav
         && mbf_utility::angle(robot_pose_, plan_.back()) < angle_tolerance_);
   }
 
+  bool AbstractControllerExecution::cancel()
+  {
+    cancel_ = true;
+    // returns false if cancel is not implemented or rejected by the recovery behavior (will run until completion)
+    if(!controller_->cancel())
+    {
+      ROS_WARN_STREAM("Cancel controlling failed or is not supported by the plugin. "
+                          << "Wait until the current control cycle finished!");
+      return false;
+    }
+    return true;
+  }
+
 
   void AbstractControllerExecution::run()
   {
-
     start_time_ = ros::Time::now();
 
     // init plan
@@ -348,9 +270,14 @@ namespace mbf_abstract_nav
     {
       while (moving_ && ros::ok())
       {
-        boost::recursive_mutex::scoped_lock sl(configuration_mutex_);
-
         boost::chrono::thread_clock::time_point loop_start_time = boost::chrono::thread_clock::now();
+
+        if(cancel_){
+          setState(CANCELED);
+          condition_.notify_all();
+          moving_ = false;
+          return;
+        }
 
         // update plan dynamically
         if (hasNewPlan())
@@ -374,7 +301,7 @@ namespace mbf_abstract_nav
             moving_ = false;
             return;
           }
-
+          current_goal_pub_.publish(plan.back());
         }
 
         // compute robot pose and store it in robot_pose_
@@ -383,6 +310,7 @@ namespace mbf_abstract_nav
         // ask planner if the goal is reached
         if (reachedGoalCheck())
         {
+          ROS_DEBUG_STREAM_NAMED("abstract_controller_execution", "Reached the goal!");
           setState(ARRIVED_GOAL);
           // goal reached, tell it the controller
           condition_.notify_all();
@@ -415,13 +343,14 @@ namespace mbf_abstract_nav
           }
           else
           {
-            if (++retries > max_retries_)
+            boost::lock_guard<boost::mutex> lock_guard(configuration_mutex_);
+            if (max_retries_ >= 0 && ++retries > max_retries_)
             {
               setState(MAX_RETRIES);
               moving_ = false;
               condition_.notify_all();
             }
-            else if (ros::Time::now() - getLastValidCmdVelTime() > patience_
+            else if (patience_ > ros::Duration(0) && ros::Time::now() - getLastValidCmdVelTime() > patience_
                 && ros::Time::now() - start_time_ > patience_)  // why not isPatienceExceeded() ?
             {
               setState(PAT_EXCEEDED);
@@ -441,7 +370,9 @@ namespace mbf_abstract_nav
         boost::chrono::thread_clock::time_point end_time = boost::chrono::thread_clock::now();
         boost::chrono::microseconds execution_duration =
             boost::chrono::duration_cast<boost::chrono::microseconds>(end_time - loop_start_time);
+        configuration_mutex_.lock();
         boost::chrono::microseconds sleep_time = calling_duration_ - execution_duration;
+        configuration_mutex_.unlock();
         if (moving_ && ros::ok())
         {
           if (sleep_time > boost::chrono::microseconds(0))
@@ -451,7 +382,10 @@ namespace mbf_abstract_nav
           }
           else
           {
-            ROS_WARN_THROTTLE(1.0, "Calculation needs too much time to stay in the moving frequency!");
+            // provide an interruption point also with 0 or negative sleep_time
+            boost::this_thread::interruption_point();
+            ROS_WARN_THROTTLE(1.0, "Calculation needs too much time to stay in the moving frequency! (%f > %f)",
+                              execution_duration.count()/1000000.0, calling_duration_.count()/1000000.0);
           }
         }
       }
@@ -461,12 +395,13 @@ namespace mbf_abstract_nav
       // Controller thread interrupted; in most cases we have started a new plan
       // Can also be that robot is oscillating or we have exceeded planner patience
       ROS_DEBUG_STREAM("Controller thread interrupted!");
-      // publishZeroVelocity();  TODO comment this makes sense for continuous replanning
+      publishZeroVelocity();
       setState(STOPPED);
       condition_.notify_all();
       moving_ = false;
     }
-    catch (...){
+    catch (...)
+    {
       message_ = "Unknown error occurred: " + boost::current_exception_diagnostic_information();
       ROS_FATAL_STREAM(message_);
       setState(INTERNAL_ERROR);

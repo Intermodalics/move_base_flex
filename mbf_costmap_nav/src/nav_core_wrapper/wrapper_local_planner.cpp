@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -75,7 +75,7 @@ bool WrapperLocalPlanner::cancel()
 }
 
 void WrapperLocalPlanner::initialize(std::string name,
-                                     tf::TransformListener *tf,
+                                     TF *tf,
                                      costmap_2d::Costmap2DROS *costmap_ros)
 {
   nav_core_plugin_->initialize(name, tf, costmap_ros);

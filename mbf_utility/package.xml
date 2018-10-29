@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>mbf_utility</name>
-  <version>0.1.0</version>
+  <version>0.2.2</version>
   <description>The mbf_utility package</description>
 
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
@@ -20,5 +20,9 @@
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>tf</exec_depend>
+
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
 
 </package>

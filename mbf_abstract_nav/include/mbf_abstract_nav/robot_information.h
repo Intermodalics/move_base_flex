@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Sebastian Pütz
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -30,40 +30,60 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  simple_server_node.cpp
+ *  robot_information.h
  *
- *  authors:
- *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
- *    Jorge Santos Simón <santos@magazino.eu>
+ *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  *
  */
 
-#include "mbf_simple_nav/simple_navigation_server.h"
+#ifndef MBF_ABSTRACT_NAV__ROBOT_INFORMATION_H_
+#define MBF_ABSTRACT_NAV__ROBOT_INFORMATION_H_
+
+#include <boost/shared_ptr.hpp>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <ros/duration.h>
+#include <string>
+#include <tf/transform_listener.h>
+
 #include <mbf_utility/types.h>
-#include <tf2_ros/transform_listener.h>
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "mbf_simple_server");
+namespace mbf_abstract_nav{
 
-  typedef boost::shared_ptr<mbf_simple_nav::SimpleNavigationServer> SimpleNavigationServerPtr;
+class RobotInformation{
 
-  ros::NodeHandle nh;
-  ros::NodeHandle private_nh("~");
+ public:
 
-  double cache_time;
-  private_nh.param("tf_cache_time", cache_time, 10.0);
+  typedef boost::shared_ptr<RobotInformation> Ptr;
 
-#ifdef USE_OLD_TF
-  TFPtr tf_listener_ptr(new TF(nh, ros::Duration(cache_time), true));
-#else
-  TFPtr tf_listener_ptr(new TF(ros::Duration(cache_time)));
-  tf2_ros::TransformListener tf_listener(*tf_listener_ptr);
-#endif 
-  
-  SimpleNavigationServerPtr controller_ptr(
-      new mbf_simple_nav::SimpleNavigationServer(tf_listener_ptr));
+  RobotInformation(
+      TF &tf_listener,
+      const std::string &global_frame,
+      const std::string &robot_frame,
+      const ros::Duration &tf_timeout);
 
-  ros::spin();
-  return EXIT_SUCCESS;
+  bool getRobotPose(geometry_msgs::PoseStamped &robot_pose) const;
+
+  bool getRobotVelocity(geometry_msgs::TwistStamped &robot_velocity, ros::Duration look_back_duration) const;
+
+  const std::string& getGlobalFrame() const;
+
+  const std::string& getRobotFrame() const;
+
+  const TF& getTransformListener() const;
+
+  const ros::Duration& getTfTimeout() const;
+
+ private:
+  const TF& tf_listener_;
+
+  const std::string &global_frame_;
+
+  const std::string &robot_frame_;
+
+  const ros::Duration &tf_timeout_;
+
+};
+
 }
+#endif //MBF_ABSTRACT_NAV__ROBOT_INFORMATION_H_

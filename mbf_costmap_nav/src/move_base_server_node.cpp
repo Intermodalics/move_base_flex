@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -39,13 +39,26 @@
  */
 
 #include "mbf_costmap_nav/costmap_navigation_server.h"
+#include <signal.h>
+#include <mbf_utility/types.h>
+#include <tf2_ros/transform_listener.h>
+
+typedef boost::shared_ptr<mbf_costmap_nav::CostmapNavigationServer> CostmapNavigationServerPtr;
+mbf_costmap_nav::CostmapNavigationServer::Ptr costmap_nav_srv_ptr;
+
+void sigintHandler(int sig)
+{
+  ROS_INFO_STREAM("Shutdown costmap navigation server.");
+  if(costmap_nav_srv_ptr)
+  {
+    costmap_nav_srv_ptr->stop();
+  }
+  ros::shutdown();
+}
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "mbf_2d_nav_server");
-
-  typedef boost::shared_ptr<tf::TransformListener> TransformListenerPtr;
-  typedef boost::shared_ptr<mbf_costmap_nav::CostmapNavigationServer> CostmapNavigationServerPtr;
+  ros::init(argc, argv, "mbf_2d_nav_server", ros::init_options::NoSigintHandler);
 
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");
@@ -53,9 +66,14 @@ int main(int argc, char **argv)
   double cache_time;
   private_nh.param("tf_cache_time", cache_time, 10.0);
 
-  TransformListenerPtr tf_listener_ptr(new tf::TransformListener(nh, ros::Duration(cache_time), true));
-  CostmapNavigationServerPtr controller_ptr(
-      new mbf_costmap_nav::CostmapNavigationServer(TransformListenerPtr(tf_listener_ptr)));
+  signal(SIGINT, sigintHandler);
+#ifdef USE_OLD_TF
+  TFPtr tf_listener_ptr(new TF(nh, ros::Duration(cache_time), true));
+#else
+  TFPtr tf_listener_ptr(new TF(ros::Duration(cache_time)));
+  tf2_ros::TransformListener tf_listener(*tf_listener_ptr);
+#endif
+  costmap_nav_srv_ptr = boost::make_shared<mbf_costmap_nav::CostmapNavigationServer>(tf_listener_ptr);
   ros::spin();
   return EXIT_SUCCESS;
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Sebastian Pütz
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -30,40 +30,62 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  simple_server_node.cpp
+ *  abstract_execution_base.cpp
  *
- *  authors:
- *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
- *    Jorge Santos Simón <santos@magazino.eu>
+ *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  *
  */
 
-#include "mbf_simple_nav/simple_navigation_server.h"
-#include <mbf_utility/types.h>
-#include <tf2_ros/transform_listener.h>
+#include "mbf_abstract_nav/abstract_execution_base.h"
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "mbf_simple_server");
+namespace mbf_abstract_nav{
 
-  typedef boost::shared_ptr<mbf_simple_nav::SimpleNavigationServer> SimpleNavigationServerPtr;
+  AbstractExecutionBase::AbstractExecutionBase(std::string name,
+                                               boost::function<void()> setup_fn,
+                                               boost::function<void()> cleanup_fn)
+    : outcome_(255), cancel_(false), name_(name), setup_fn_(setup_fn), cleanup_fn_(cleanup_fn)
+  {
+  }
 
-  ros::NodeHandle nh;
-  ros::NodeHandle private_nh("~");
+  bool AbstractExecutionBase::start()
+  {
+    //setState(STARTED); // TODO
+    thread_ = boost::thread(&AbstractExecutionBase::run, this);
+    return true;
+  }
 
-  double cache_time;
-  private_nh.param("tf_cache_time", cache_time, 10.0);
+  void AbstractExecutionBase::stop()
+  {
+    ROS_WARN_STREAM("Trying to stop the planning rigorously by interrupting the thread!");
+    thread_.interrupt();
+    //setState(STOPPED); // TODO
+  }
 
-#ifdef USE_OLD_TF
-  TFPtr tf_listener_ptr(new TF(nh, ros::Duration(cache_time), true));
-#else
-  TFPtr tf_listener_ptr(new TF(ros::Duration(cache_time)));
-  tf2_ros::TransformListener tf_listener(*tf_listener_ptr);
-#endif 
-  
-  SimpleNavigationServerPtr controller_ptr(
-      new mbf_simple_nav::SimpleNavigationServer(tf_listener_ptr));
+  void AbstractExecutionBase::join(){
+    thread_.join();
+  }
 
-  ros::spin();
-  return EXIT_SUCCESS;
-}
+  void AbstractExecutionBase::waitForStateUpdate(boost::chrono::microseconds const &duration)
+  {
+    boost::mutex mutex;
+    boost::unique_lock<boost::mutex> lock(mutex);
+    condition_.wait_for(lock, duration);
+  }
+
+  uint32_t AbstractExecutionBase::getOutcome()
+  {
+    return outcome_;
+  }
+
+  std::string AbstractExecutionBase::getMessage()
+  {
+    return message_;
+  }
+
+  std::string AbstractExecutionBase::getName()
+  {
+    return name_;
+  }
+
+
+} /* namespace mbf_abstract_nav */

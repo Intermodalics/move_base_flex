@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Sebastian Pütz
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -30,55 +30,52 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  simple_planner_execution.cpp
+ *  abstract_plugin_manager.h
  *
- *  authors:
- *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
- *    Jorge Santos Simón <santos@magazino.eu>
+ *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  *
  */
 
-#include "mbf_simple_nav/simple_planner_execution.h"
-#include <pluginlib/class_loader.h>
+#ifndef MBF_ABSTRACT_NAV__ABSTRACT_PLUGIN_MANAGER_H_
+#define MBF_ABSTRACT_NAV__ABSTRACT_PLUGIN_MANAGER_H_
 
-namespace mbf_simple_nav
+#include <boost/function.hpp>
+
+namespace mbf_abstract_nav{
+
+template <typename PluginType>
+class AbstractPluginManager
 {
+ public:
 
-SimplePlannerExecution::SimplePlannerExecution(boost::condition_variable &condition) :
-    mbf_abstract_nav::AbstractPlannerExecution(condition)
-{
-}
+  typedef boost::function<typename PluginType::Ptr(const std::string& plugin)> loadPluginFunction;
+  typedef boost::function<bool (const std::string& name, const typename PluginType::Ptr& plugin_ptr)> initPluginFunction;
 
-SimplePlannerExecution::~SimplePlannerExecution()
-{
-}
+  AbstractPluginManager(
+      const std::string param_name,
+      const loadPluginFunction& loadPlugin,
+      const initPluginFunction& initPlugin
+  );
 
-mbf_abstract_core::AbstractPlanner::Ptr SimplePlannerExecution::loadPlannerPlugin(const std::string& planner_type)
-{
-  static pluginlib::ClassLoader<mbf_abstract_core::AbstractPlanner>
-      class_loader("mbf_abstract_core", "mbf_abstract_core::AbstractPlanner");
-  mbf_abstract_core::AbstractPlanner::Ptr planner_ptr;
-  ROS_INFO("Load global planner plugin.");
-  try
-  {
-    planner_ptr = class_loader.createInstance(planner_type);
-  }
-  catch (const pluginlib::PluginlibException &ex)
-  {
-    ROS_FATAL_STREAM("Failed to load the " << planner_type << " planner, are you sure it is properly registered"
-                                           << " and that the containing library is built? Exception: " << ex.what());
-  }
-  ROS_INFO("Global planner plugin loaded.");
+  bool loadPlugins();
 
-  return planner_ptr;
-}
+  bool hasPlugin(const std::string& name);
 
-bool SimplePlannerExecution::initPlugin(
-    const std::string& name,
-    const mbf_abstract_core::AbstractPlanner::Ptr&  planner_ptr
-)
-{
-  return true;
-}
+  std::string getType(const std::string& name);
 
-} /* namespace mbf_simple_nav */
+  const std::vector<std::string>& getLoadedNames();
+
+  typename PluginType::Ptr getPlugin(const std::string& name);
+
+ protected:
+  std::map<std::string, typename PluginType::Ptr> plugins_;
+  std::map<std::string, std::string> plugins_type_;
+  std::vector<std::string> names_;
+  const std::string param_name_;
+  const loadPluginFunction loadPlugin_;
+  const initPluginFunction initPlugin_;
+};
+} /* namespace mbf_abstract_nav */
+
+#include "impl/abstract_plugin_manager.tcc"
+#endif //MBF_ABSTRACT_NAV__ABSTRACT_PLUGIN_MANAGER_H_

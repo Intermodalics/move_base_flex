@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -44,6 +44,7 @@
 #include <nav_core/recovery_behavior.h>
 #include "mbf_costmap_core/costmap_recovery.h"
 
+#include <mbf_utility/types.h>
 namespace mbf_nav_core_wrapper {
   /**
    * @class CostmapRecovery
@@ -60,7 +61,7 @@ namespace mbf_nav_core_wrapper {
        * @param global_costmap A pointer to the global_costmap used by the navigation stack
        * @param local_costmap A pointer to the local_costmap used by the navigation stack
        */
-      virtual void initialize(std::string name, tf::TransformListener* tf,
+      virtual void initialize(std::string name, TF* tf,
                               costmap_2d::Costmap2DROS* global_costmap,
                               costmap_2d::Costmap2DROS* local_costmap);
 
