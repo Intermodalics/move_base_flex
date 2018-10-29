@@ -190,21 +190,6 @@ void AbstractNavigationServer::publishPath(
   path_pub_.publish(path);
 }
 
-bool AbstractNavigationServer::transformGoalToGlobalFrame(
-  const geometry_msgs::PoseStamped &goal, geometry_msgs::PoseStamped &global_goal)
-{
-  bool tf_success = false;
-  tf_success = mbf_utility::transformPose(*tf_listener_ptr_, global_frame_, goal.header.stamp,
-                                               ros::Duration(tf_timeout_), goal, global_frame_, global_goal);
-  if (!tf_success)
-  {
-    ROS_ERROR_STREAM("Can not transform pose from the \"" << goal.header.frame_id << "\" frame into the \""
-                                                          << global_frame_ << "\" frame !");
-    return false;
-  }
-  return true;
-}
-
 bool AbstractNavigationServer::transformPlanToGlobalFrame(
   std::vector<geometry_msgs::PoseStamped> &plan, std::vector<geometry_msgs::PoseStamped> &global_plan)
 {
@@ -250,18 +235,9 @@ void AbstractNavigationServer::callActionGetPath(
   mbf_msgs::GetPathResult result;
   geometry_msgs::PoseStamped start_pose, goal_pose;
 
-  if (!transformGoalToGlobalFrame(goal->target_pose, goal_pose))
-  {
-    result.outcome = mbf_msgs::GetPathResult::TF_ERROR;
-    result.message = "Could not transform the goal to the global frame!";
-
-    ROS_ERROR_STREAM_NAMED(name_action_get_path, result.message << " Canceling the action call.");
-    action_server_get_path_ptr_->setAborted(result, result.message);
-    return;
-  }
-
   result.path.header.seq = path_seq_count_++;
   result.path.header.frame_id = global_frame_;
+  goal_pose = goal->target_pose;
   current_goal_pub_.publish(goal_pose);
 
   double tolerance = goal->tolerance;
