@@ -49,18 +49,18 @@ namespace mbf_abstract_nav
 MoveBaseAction::MoveBaseAction(const std::string &name,
                                const RobotInformation &robot_info,
                                const std::vector<std::string> &behaviors)
-  :  name_(name), robot_info_(robot_info), private_nh_("~"),
+  :  oscillation_timeout_(0),
+     oscillation_distance_(0),
+     name_(name), robot_info_(robot_info), private_nh_("~"),
      action_client_exe_path_(private_nh_, "exe_path"),
      action_client_get_path_(private_nh_, "get_path"),
      action_client_recovery_(private_nh_, "recovery"),
-     oscillation_timeout_(0),
-     oscillation_distance_(0),
+     replanning_(false),
+     replanning_rate_(1.0),
      recovery_enabled_(true),
      behaviors_(behaviors),
      action_state_(NONE),
-     recovery_trigger_(NONE),
-     replanning_(false),
-     replanning_rate_(1.0)
+     recovery_trigger_(NONE)
 {
 }
 
@@ -361,7 +361,6 @@ void MoveBaseAction::actionExePathDone(
   ROS_DEBUG_STREAM_NAMED("move_base", "Action \"exe_path\" finished.");
 
   const mbf_msgs::ExePathResult& result = *(result_ptr.get());
-  const mbf_msgs::MoveBaseGoal& goal = *(goal_handle_.getGoal().get());
   mbf_msgs::MoveBaseResult move_base_result;
 
   // copy result from get_path action

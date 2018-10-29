@@ -56,9 +56,11 @@ namespace mbf_abstract_nav
       boost::function<void()> setup_fn,
       boost::function<void()> cleanup_fn) :
     AbstractExecutionBase(name, setup_fn, cleanup_fn),
-      controller_(controller_ptr), tf_listener_ptr(tf_listener_ptr), state_(INITIALIZED),
-      moving_(false), max_retries_(0), patience_(0), vel_pub_(vel_pub), current_goal_pub_(goal_pub),
-      calling_duration_(boost::chrono::microseconds(static_cast<int>(1e6 / DEFAULT_CONTROLLER_FREQUENCY)))
+      controller_(controller_ptr), tf_listener_ptr(tf_listener_ptr),
+      max_retries_(0), patience_(0),
+      calling_duration_(boost::chrono::microseconds(static_cast<int>(1e6 / DEFAULT_CONTROLLER_FREQUENCY))),
+      vel_pub_(vel_pub), current_goal_pub_(goal_pub),
+      state_(INITIALIZED), moving_(false)
   {
     ros::NodeHandle nh;
     ros::NodeHandle private_nh("~");

@@ -184,8 +184,11 @@ namespace mbf_abstract_nav
      * @param tolerance tolerance to the goal pose for the planning
      * @return true, if the planner thread has been started, false if the thread is already running.
      */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
     bool start(const geometry_msgs::PoseStamped &start, const geometry_msgs::PoseStamped &goal,
                double tolerance);
+#pragma GCC diagnostic pop
 
     /**
      * @brief Is called by the server thread to reconfigure the controller execution, if a user uses dynamic reconfigure

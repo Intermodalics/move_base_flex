@@ -50,8 +50,9 @@ namespace mbf_abstract_nav
                                                      boost::function<void()> setup_fn,
                                                      boost::function<void()> cleanup_fn) :
     AbstractExecutionBase(name, setup_fn, cleanup_fn),
-      planner_(planner_ptr), state_(INITIALIZED), planning_(false),
-      has_new_start_(false), has_new_goal_(false)
+      planner_(planner_ptr),
+      has_new_goal_(false), has_new_start_(false),
+      planning_(false), state_(INITIALIZED)
   {
     ros::NodeHandle private_nh("~");
 
@@ -234,8 +235,6 @@ namespace mbf_abstract_nav
     {
       while (planning_ && ros::ok())
       {
-        boost::chrono::thread_clock::time_point start_time = boost::chrono::thread_clock::now();
-
         // call the planner
         std::vector<geometry_msgs::PoseStamped> plan;
         double cost;

@@ -46,7 +46,7 @@ namespace mbf_abstract_nav
 {
 
 AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
-    : tf_listener_ptr_(tf_listener_ptr), private_nh_("~"),
+    : private_nh_("~"),
       planner_plugin_manager_("planners",
           boost::bind(&AbstractNavigationServer::loadPlannerPlugin, this, _1),
           boost::bind(&AbstractNavigationServer::initializePlannerPlugin, this, _1, _2)),
@@ -56,9 +56,10 @@ AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
       recovery_plugin_manager_("recovery_behaviors",
           boost::bind(&AbstractNavigationServer::loadRecoveryPlugin, this, _1),
           boost::bind(&AbstractNavigationServer::initializeRecoveryPlugin, this, _1, _2)),
-      tf_timeout_(private_nh_.param<double>("tf_timeout", 3.0)),
-      global_frame_(private_nh_.param<std::string>("global_frame", "map")),
       robot_frame_(private_nh_.param<std::string>("robot_frame", "base_link")),
+      global_frame_(private_nh_.param<std::string>("global_frame", "map")),
+      tf_timeout_(private_nh_.param<double>("tf_timeout", 3.0)),
+      tf_listener_ptr_(tf_listener_ptr),
       robot_info_(*tf_listener_ptr, global_frame_, robot_frame_, tf_timeout_),
       controller_action_(name_action_exe_path, robot_info_),
       planner_action_(name_action_get_path, robot_info_),
@@ -131,7 +132,6 @@ void AbstractNavigationServer::callActionGetPath(ActionServerGetPath::GoalHandle
 {
   ROS_INFO_STREAM_NAMED("get_path", "Start action \"get_path\"");
   const mbf_msgs::GetPathGoal &goal = *(goal_handle.getGoal().get());
-  const geometry_msgs::Point &p = goal.target_pose.pose.position;
 
   std::string planner_name;
   if(!planner_plugin_manager_.getLoadedNames().empty())
