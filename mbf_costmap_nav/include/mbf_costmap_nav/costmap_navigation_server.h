@@ -214,7 +214,10 @@ private:
    * @param config Configuration parameters. See the MoveBaseFlexConfig definition.
    * @param level bit mask, which parameters are set.
    */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   void reconfigure(mbf_costmap_nav::MoveBaseFlexConfig &config, uint32_t level);
+#pragma GCC diagnostic pop
 
   pluginlib::ClassLoader<mbf_costmap_core::CostmapRecovery> recovery_plugin_loader_;
   pluginlib::ClassLoader<nav_core::RecoveryBehavior> nav_core_recovery_plugin_loader_;
