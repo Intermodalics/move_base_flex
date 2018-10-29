@@ -74,7 +74,13 @@ void PlannerAction::run(GoalHandle &goal_handle, AbstractPlannerExecution &execu
 
   if(use_start_pose)
   {
-    start_pose = goal.start_pose;
+    if (!transformPoseToGlobalFrame(goal.start_pose, start_pose)) {
+      result.outcome = mbf_msgs::GetPathResult::TF_ERROR;
+      result.message = "Could not transform the start pose to the global frame!";
+      goal_handle.setAborted(result, result.message);
+      ROS_ERROR_STREAM_NAMED(name_, result.message << " Canceling the action call.");
+      return;
+    }
     const geometry_msgs::Point& p = start_pose.pose.position;
     ROS_INFO_STREAM_NAMED(name_, "Use the given start pose (" << p.x << ", " << p.y << ", " << p.z << ").");
   }
@@ -97,6 +103,15 @@ void PlannerAction::run(GoalHandle &goal_handle, AbstractPlannerExecution &execu
     }
   }
 
+  geometry_msgs::PoseStamped target_pose = goal.start_pose;
+  if (!transformPoseToGlobalFrame(goal.target_pose, target_pose)) {
+    result.outcome = mbf_msgs::GetPathResult::TF_ERROR;
+    result.message = "Could not transform the target pose to the global frame!";
+    goal_handle.setAborted(result, result.message);
+    ROS_ERROR_STREAM_NAMED(name_, result.message << " Canceling the action call.");
+    return;
+  }
+
   AbstractPlannerExecution::PlanningState state_planning_input;
 
   std::vector<geometry_msgs::PoseStamped> plan, global_plan;
@@ -110,7 +125,7 @@ void PlannerAction::run(GoalHandle &goal_handle, AbstractPlannerExecution &execu
     {
       case AbstractPlannerExecution::INITIALIZED:
         ROS_DEBUG_STREAM_NAMED(name_, "planner state: initialized");
-        if (!execution.start(start_pose, goal.target_pose, tolerance))
+        if (!execution.start(start_pose, target_pose, tolerance))
         {
           result.outcome = mbf_msgs::GetPathResult::INTERNAL_ERROR;
           result.message = "Another thread is still planning!";
@@ -280,6 +295,21 @@ void PlannerAction::publishPath(
   path.header.frame_id = plan.front().header.frame_id;
   path.header.stamp = plan.front().header.stamp;
   path_pub_.publish(path);
+}
+
+bool PlannerAction::transformPoseToGlobalFrame(
+    const geometry_msgs::PoseStamped &pose, geometry_msgs::PoseStamped &global_pose)
+{
+  bool tf_success = false;
+  tf_success = mbf_utility::transformPose(robot_info_.getTransformListener(), robot_info_.getGlobalFrame(), pose.header.stamp,
+                                          robot_info_.getTfTimeout(), pose, robot_info_.getGlobalFrame(), global_pose);
+  if (!tf_success)
+  {
+    ROS_ERROR_STREAM("Can not transform pose from the \"" << pose.header.frame_id << "\" frame into the \""
+                                                          << robot_info_.getGlobalFrame() << "\" frame !");
+    return false;
+  }
+  return true;
 }
 
 bool PlannerAction::transformPlanToGlobalFrame(

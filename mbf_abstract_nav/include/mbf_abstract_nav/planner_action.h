@@ -72,6 +72,15 @@ class PlannerAction : public AbstractAction<mbf_msgs::GetPathAction, AbstractPla
   void publishPath(std::vector<geometry_msgs::PoseStamped> &plan);
 
   /**
+   * @brief Transforms a pose to the global frame (global_frame_) coord system.
+   * @param pose Input pose to be transformed.
+   * @param global_pose Output pose, which is then transformed to the global frame.
+   * @return true, if the transformation succeeded, false otherwise
+   */
+  bool transformPoseToGlobalFrame(
+      const geometry_msgs::PoseStamped &pose, geometry_msgs::PoseStamped &global_pose);
+
+  /**
    * @brief Transforms a plan to the global frame (global_frame_) coord system.
    * @param plan Input plan to be transformed.
    * @param global_plan Output plan, which is then transformed to the global frame.
