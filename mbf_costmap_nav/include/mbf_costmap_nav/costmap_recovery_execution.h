@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  move_base_recovery_execution.h
+ *  costmap_recovery_execution.h
  *
  *  authors:
  *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
@@ -42,6 +42,7 @@
 #define MBF_COSTMAP_NAV__COSTMAP_RECOVERY_EXECUTION_H_
 
 #include <mbf_abstract_nav/abstract_recovery_execution.h>
+#include <mbf_costmap_nav/MoveBaseFlexConfig.h>
 #include <mbf_costmap_core/costmap_recovery.h>
 #include <costmap_2d/costmap_2d_ros.h>
 
@@ -63,16 +64,19 @@ public:
 
   /**
    * @brief Constructor
-   * @param condition Thread sleep condition variable, to wake up connected threads
    * @param tf_listener_ptr Shared pointer to a common tf listener
    * @param global_costmap Shared pointer to the global costmap.
    * @param local_costmap Shared pointer to the local costmap.
    */
-  CostmapRecoveryExecution(boost::condition_variable &condition,
-                            const boost::shared_ptr<tf::TransformListener> &tf_listener_ptr,
-                            CostmapPtr &global_costmap,
-                            CostmapPtr &local_costmap);
-
+  CostmapRecoveryExecution(
+      const std::string name,
+      const mbf_costmap_core::CostmapRecovery::Ptr &recovery_ptr,
+      const TFPtr &tf_listener_ptr,
+      CostmapPtr &global_costmap,
+      CostmapPtr &local_costmap,
+      const MoveBaseFlexConfig &config,
+      boost::function<void()> setup_fn,
+      boost::function<void()> cleanup_fn);
   /**
    * Destructor
    */
@@ -82,28 +86,13 @@ protected:
 
   //! Shared pointer to the global costmap
   CostmapPtr &global_costmap_;
-  
+
   //! Shared pointer to thr local costmap
   CostmapPtr &local_costmap_;
 
 private:
 
-  /**
-   * @brief Initializes a recovery behavior plugin with its name and pointers to the global and local costmaps
-   * @param name The name of the recovery behavior
-   * @param behavior_ptr pointer to the recovery behavior object which corresponds to the name param
-   * @return true if init succeeded, false otherwise
-   */
-  virtual bool initPlugin(
-      const std::string& name,
-      const mbf_abstract_core::AbstractRecovery::Ptr& behavior_ptr);
-
-  /**
-   * @brief Loads a Recovery plugin associated with given recovery type parameter
-   * @param recovery_name The name of the Recovery plugin
-   * @return A shared pointer to a Recovery plugin, if the plugin was loaded successfully, an empty pointer otherwise.
-   */
-  virtual mbf_abstract_core::AbstractRecovery::Ptr loadRecoveryPlugin(const std::string& recovery_type);
+  mbf_abstract_nav::MoveBaseFlexConfig toAbstract(const MoveBaseFlexConfig &config);
 };
 
 } /* namespace mbf_costmap_nav */

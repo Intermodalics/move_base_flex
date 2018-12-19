@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -43,7 +43,7 @@
 
 namespace mbf_nav_core_wrapper
 {
-void WrapperRecoveryBehavior::initialize(std::string name, tf::TransformListener *tf,
+void WrapperRecoveryBehavior::initialize(std::string name, TF *tf,
                                          costmap_2d::Costmap2DROS *global_costmap,
                                          costmap_2d::Costmap2DROS *local_costmap)
 {
