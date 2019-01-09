@@ -73,7 +73,7 @@ int main(int argc, char **argv)
   TFPtr tf_listener_ptr(new TF(ros::Duration(cache_time)));
   tf2_ros::TransformListener tf_listener(*tf_listener_ptr);
 #endif
-  costmap_nav_srv_ptr = boost::make_shared<mbf_costmap_nav::CostmapNavigationServer>(tf_listener_ptr);
+  costmap_nav_srv_ptr = boost::make_shared<mbf_costmap_nav::CostmapNavigationServer>(nh, private_nh, tf_listener_ptr);
   ros::spin();
   return EXIT_SUCCESS;
 }

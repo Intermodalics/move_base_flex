@@ -60,8 +60,10 @@ namespace mbf_costmap_nav
 {
 
 
-CostmapNavigationServer::CostmapNavigationServer(const TFPtr &tf_listener_ptr) :
-  AbstractNavigationServer(tf_listener_ptr),
+CostmapNavigationServer::CostmapNavigationServer(const ros::NodeHandle &nh,
+                                                 const ros::NodeHandle &nhp,
+                                                 const TFPtr &tf_listener_ptr) :
+  AbstractNavigationServer(nh, nhp, tf_listener_ptr),
   recovery_plugin_loader_("mbf_costmap_core", "mbf_costmap_core::CostmapRecovery"),
   nav_core_recovery_plugin_loader_("nav_core", "nav_core::RecoveryBehavior"),
   controller_plugin_loader_("mbf_costmap_core", "mbf_costmap_core::CostmapController"),
