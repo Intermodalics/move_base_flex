@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 #endif 
   
   SimpleNavigationServerPtr controller_ptr(
-      new mbf_simple_nav::SimpleNavigationServer(tf_listener_ptr));
+      new mbf_simple_nav::SimpleNavigationServer(nh, private_nh, tf_listener_ptr));
 
   ros::spin();
   return EXIT_SUCCESS;

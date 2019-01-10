@@ -66,9 +66,11 @@ public:
 
   /**
    * @brief Constructor
+   * @param nh Node handle
+   * @param nhp Private node handle
    * @param tf_listener_ptr Shared pointer to a common TransformListener
    */
-  SimpleNavigationServer(const TFPtr &tf_listener_ptr);
+  SimpleNavigationServer(const ros::NodeHandle& nh, const ros::NodeHandle& nhp, const TFPtr &tf_listener_ptr);
 
   /**
    * @brief Destructor
