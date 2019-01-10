@@ -45,8 +45,8 @@
 namespace mbf_abstract_nav
 {
 
-AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
-    : private_nh_("~"),
+AbstractNavigationServer::AbstractNavigationServer(const ros::NodeHandle& nh, const ros::NodeHandle& nhp, const TFPtr &tf_listener_ptr)
+    : private_nh_(nhp),
       planner_plugin_manager_("planners",
           boost::bind(&AbstractNavigationServer::loadPlannerPlugin, this, _1),
           boost::bind(&AbstractNavigationServer::initializePlannerPlugin, this, _1, _2)),
@@ -66,7 +66,7 @@ AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
       recovery_action_(name_action_recovery, robot_info_),
       move_base_action_(name_action_move_base, robot_info_, recovery_plugin_manager_.getLoadedNames())
 {
-  ros::NodeHandle nh;
+  ros::NodeHandle nodeHandle(nh);
 
   // oscillation timeout and distance
   double oscillation_timeout;
@@ -74,10 +74,10 @@ AbstractNavigationServer::AbstractNavigationServer(const TFPtr &tf_listener_ptr)
   oscillation_timeout_ = ros::Duration(oscillation_timeout);
   private_nh_.param("oscillation_distance", oscillation_distance_, 0.02);
 
-  goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>("current_goal", 1);
+  goal_pub_ = nodeHandle.advertise<geometry_msgs::PoseStamped>("current_goal", 1);
 
   // init cmd_vel publisher for the robot velocity
-  vel_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+  vel_pub_ = nodeHandle.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
   action_server_get_path_ptr_ = ActionServerGetPathPtr(
     new ActionServerGetPath(

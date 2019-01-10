@@ -123,12 +123,14 @@ typedef boost::shared_ptr<dynamic_reconfigure::Server<mbf_abstract_nav::MoveBase
     /**
      * @brief Constructor, reads all parameters and initializes all action servers and creates the plugin instances.
      *        Parameters are the concrete implementations of the abstract classes.
+     * @param nh Public node handle.
+     * @param nhp Private node handle.
      * @param tf_listener_ptr shared pointer to the common TransformListener buffering transformations
      * @param planning_ptr shared pointer to an object of the concrete derived implementation of the AbstractPlannerExecution
      * @param moving_ptr shared pointer to an object of the concrete derived implementation of the AbstractControllerExecution
      * @param recovery_ptr shared pointer to an object of the concrete derived implementation of the AbstractRecoveryExecution
      */
-    AbstractNavigationServer(const TFPtr &tf_listener_ptr);
+    AbstractNavigationServer(const ros::NodeHandle &nh, const ros::NodeHandle &nhp, const TFPtr &tf_listener_ptr);
     /**
      * @brief Destructor
      */
