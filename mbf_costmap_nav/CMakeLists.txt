@@ -31,7 +31,7 @@ set(MBF_COSTMAP_2D_SERVER_NODE mbf_costmap_nav)
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${MBF_COSTMAP_2D_SERVER_LIB}
+  LIBRARIES ${MBF_COSTMAP_2D_SERVER_LIB} ${MBF_NAV_CORE_WRAPPER_LIB}
   CATKIN_DEPENDS
   actionlib
   actionlib_msgs
