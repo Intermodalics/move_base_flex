@@ -360,6 +360,15 @@ void MoveBaseAction::actionExePathDone(
 
   ROS_DEBUG_STREAM_NAMED("move_base", "Action \"exe_path\" finished.");
 
+  // Return early if the result_ptr is null.
+  // TODO: handle this properly in controller_action.cpp, need to
+  // investigate the behavior when the goal gets preempted.
+  if(!result_ptr) {
+    ROS_WARN_STREAM_NAMED("move_base",
+                          "Action \"exe_path\" finished with null result.");
+    return;
+  }
+
   const mbf_msgs::ExePathResult& result = *(result_ptr.get());
   mbf_msgs::MoveBaseResult move_base_result;
 
