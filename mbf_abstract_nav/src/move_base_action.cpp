@@ -360,15 +360,19 @@ void MoveBaseAction::actionExePathDone(
 
   ROS_DEBUG_STREAM_NAMED("move_base", "Action \"exe_path\" finished.");
 
-  const mbf_msgs::ExePathResult& result = *(result_ptr.get());
   mbf_msgs::MoveBaseResult move_base_result;
 
   // copy result from get_path action
-  move_base_result.outcome = result.outcome;
-  move_base_result.message = result.message;
-  move_base_result.dist_to_goal = result.dist_to_goal;
-  move_base_result.angle_to_goal = result.angle_to_goal;
-  move_base_result.final_pose = result.final_pose;
+  if (result_ptr) {
+    const mbf_msgs::ExePathResult& result = *(result_ptr.get());
+    move_base_result.outcome = result.outcome;
+    move_base_result.message = result.message;
+    move_base_result.dist_to_goal = result.dist_to_goal;
+    move_base_result.angle_to_goal = result.angle_to_goal;
+    move_base_result.final_pose = result.final_pose;
+  } else {
+    ROS_ERROR_STREAM_NAMED("move_base", "Invalid result_ptr!.");
+  }
 
   ROS_DEBUG_STREAM_NAMED("exe_path", "Current state:" << state.toString());
 
@@ -383,7 +387,7 @@ void MoveBaseAction::actionExePathDone(
       break;
 
     case actionlib::SimpleClientGoalState::ABORTED:
-      switch (result.outcome)
+      switch (move_base_result.outcome)
       {
         case mbf_msgs::ExePathResult::INVALID_PATH:
         case mbf_msgs::ExePathResult::TF_ERROR:
@@ -403,7 +407,7 @@ void MoveBaseAction::actionExePathDone(
           }
           else
           {
-            ROS_WARN_STREAM_NAMED("move_base", "Abort the execution of the controller: " << result.message);
+            ROS_WARN_STREAM_NAMED("move_base", "Abort the execution of the controller: " << move_base_result.message);
             goal_handle_.setAborted(move_base_result, state.getText());
           }
           break;
@@ -430,6 +434,8 @@ void MoveBaseAction::actionExePathDone(
       break;
 
     case actionlib::SimpleClientGoalState::LOST:
+      ROS_DEBUG_STREAM_NAMED("move_base", "The action \""
+          << "exe_path" << "\" was lost!");
       // TODO
       break;
 
