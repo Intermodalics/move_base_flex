@@ -46,14 +46,14 @@ namespace mbf_abstract_nav
 {
 
 AbstractNavigationServer::AbstractNavigationServer(const ros::NodeHandle& nh, const ros::NodeHandle& nhp, const TFPtr &tf_listener_ptr)
-    : private_nh_(nhp),
-      planner_plugin_manager_("planners",
+    : nh_(nh), private_nh_(nhp),
+      planner_plugin_manager_(nh, nhp, "planners",
           boost::bind(&AbstractNavigationServer::loadPlannerPlugin, this, _1),
           boost::bind(&AbstractNavigationServer::initializePlannerPlugin, this, _1, _2)),
-      controller_plugin_manager_("controllers",
+      controller_plugin_manager_(nh, nhp, "controllers",
           boost::bind(&AbstractNavigationServer::loadControllerPlugin, this, _1),
           boost::bind(&AbstractNavigationServer::initializeControllerPlugin, this, _1, _2)),
-      recovery_plugin_manager_("recovery_behaviors",
+      recovery_plugin_manager_(nh, nhp, "recovery_behaviors",
           boost::bind(&AbstractNavigationServer::loadRecoveryPlugin, this, _1),
           boost::bind(&AbstractNavigationServer::initializeRecoveryPlugin, this, _1, _2)),
       robot_frame_(private_nh_.param<std::string>("robot_frame", "base_link")),
@@ -61,10 +61,10 @@ AbstractNavigationServer::AbstractNavigationServer(const ros::NodeHandle& nh, co
       tf_timeout_(private_nh_.param<double>("tf_timeout", 3.0)),
       tf_listener_ptr_(tf_listener_ptr),
       robot_info_(*tf_listener_ptr, global_frame_, robot_frame_, tf_timeout_),
-      controller_action_(name_action_exe_path, robot_info_),
-      planner_action_(name_action_get_path, robot_info_),
-      recovery_action_(name_action_recovery, robot_info_),
-      move_base_action_(name_action_move_base, robot_info_, recovery_plugin_manager_.getLoadedNames())
+      controller_action_(nh, nhp, name_action_exe_path, robot_info_),
+      planner_action_(nh, nhp, name_action_get_path, robot_info_),
+      recovery_action_(nh, nhp, name_action_recovery, robot_info_),
+      move_base_action_(nh, nhp, name_action_move_base, robot_info_, recovery_plugin_manager_.getLoadedNames())
 {
   ros::NodeHandle nodeHandle(nh);
 
@@ -325,7 +325,8 @@ mbf_abstract_nav::AbstractPlannerExecution::Ptr AbstractNavigationServer::newPla
     const std::string name,
     const mbf_abstract_core::AbstractPlanner::Ptr plugin_ptr)
 {
-  return boost::make_shared<mbf_abstract_nav::AbstractPlannerExecution>(name, plugin_ptr, last_config_,
+  return boost::make_shared<mbf_abstract_nav::AbstractPlannerExecution>(nh_, private_nh_,
+                                                                        name, plugin_ptr, last_config_,
                                                                         boost::function<void()>(),
                                                                         boost::function<void()>());
 }
@@ -334,15 +335,18 @@ mbf_abstract_nav::AbstractControllerExecution::Ptr AbstractNavigationServer::new
     const std::string name,
     const mbf_abstract_core::AbstractController::Ptr plugin_ptr)
 {
-  return boost::make_shared<mbf_abstract_nav::AbstractControllerExecution>(name, plugin_ptr, vel_pub_, goal_pub_,
-      tf_listener_ptr_, last_config_, boost::function<void()>(), boost::function<void()>());
+//  return boost::make_shared<mbf_abstract_nav::AbstractControllerExecution>(nh_, private_nh_, name, plugin_ptr, vel_pub_, goal_pub_,
+//      tf_listener_ptr_, last_config_, boost::function<void()>(), boost::function<void()>());
+  return mbf_abstract_nav::AbstractControllerExecution::Ptr(
+      new mbf_abstract_nav::AbstractControllerExecution(nh_, private_nh_, name, plugin_ptr, vel_pub_, goal_pub_,
+      tf_listener_ptr_, last_config_, boost::function<void()>(), boost::function<void()>()));
 }
 
 mbf_abstract_nav::AbstractRecoveryExecution::Ptr AbstractNavigationServer::newRecoveryExecution(
     const std::string name,
     const mbf_abstract_core::AbstractRecovery::Ptr plugin_ptr)
 {
-  return boost::make_shared<mbf_abstract_nav::AbstractRecoveryExecution>(name, plugin_ptr, tf_listener_ptr_, last_config_,
+  return boost::make_shared<mbf_abstract_nav::AbstractRecoveryExecution>(nh_, private_nh_, name, plugin_ptr, tf_listener_ptr_, last_config_,
                                                                          boost::function<void()>(),
                                                                          boost::function<void()>());
 }

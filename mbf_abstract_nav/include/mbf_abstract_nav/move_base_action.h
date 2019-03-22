@@ -66,7 +66,8 @@ class MoveBaseAction
 
   typedef actionlib::ActionServer<mbf_msgs::MoveBaseAction>::GoalHandle GoalHandle;
 
-  MoveBaseAction(const std::string &name, const RobotInformation &robot_info, const std::vector<std::string> &controllers);
+  MoveBaseAction(const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
+                 const std::string &name, const RobotInformation &robot_info, const std::vector<std::string> &controllers);
 
   ~MoveBaseAction();
 

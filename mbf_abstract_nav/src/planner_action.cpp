@@ -44,12 +44,13 @@
 namespace mbf_abstract_nav{
 
 PlannerAction::PlannerAction(
+    const ros::NodeHandle& _nh, const ros::NodeHandle&,
     const std::string &name,
     const RobotInformation &robot_info)
   : AbstractAction(name, robot_info, boost::bind(&mbf_abstract_nav::PlannerAction::run, this, _1, _2)), path_seq_count_(0)
 {
 
-  ros::NodeHandle nh;
+  ros::NodeHandle nh(_nh);
   // informative topics: current goal and global path
   path_pub_ = nh.advertise<nav_msgs::Path>("global_path", 1);
   current_goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>("current_goal", 1);

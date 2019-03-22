@@ -65,6 +65,7 @@ public:
    * @param costmap Shared pointer to the costmap.
    */
   CostmapPlannerExecution(
+      const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
       const std::string name,
       const mbf_costmap_core::CostmapPlanner::Ptr &planner_ptr,
       CostmapPtr &costmap,

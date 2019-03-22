@@ -84,7 +84,8 @@ namespace mbf_abstract_nav
      * @param condition Thread sleep condition variable, to wake up connected threads
      * @param tf_listener_ptr Shared pointer to a common tf listener
      */
-    AbstractRecoveryExecution(const std::string name,
+    AbstractRecoveryExecution(const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
+                              const std::string name,
                               const mbf_abstract_core::AbstractRecovery::Ptr recovery_ptr,
                               const TFPtr &tf_listener_ptr,
                               const MoveBaseFlexConfig &config,

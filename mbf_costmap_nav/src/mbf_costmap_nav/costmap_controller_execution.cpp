@@ -43,6 +43,7 @@ namespace mbf_costmap_nav
 {
 
 CostmapControllerExecution::CostmapControllerExecution(
+    const ros::NodeHandle& nh, const ros::NodeHandle& private_nh,
     const std::string name,
     const mbf_costmap_core::CostmapController::Ptr &controller_ptr,
     const ros::Publisher& vel_pub,
@@ -52,11 +53,10 @@ CostmapControllerExecution::CostmapControllerExecution(
     const MoveBaseFlexConfig &config,
     boost::function<void()> setup_fn,
     boost::function<void()> cleanup_fn)
-      : AbstractControllerExecution(name, controller_ptr, vel_pub, goal_pub, tf_listener_ptr,
+      : AbstractControllerExecution(nh, private_nh, name, controller_ptr, vel_pub, goal_pub, tf_listener_ptr,
           toAbstract(config), setup_fn, cleanup_fn),
         costmap_ptr_(costmap_ptr)
 {
-  ros::NodeHandle private_nh("~");
   private_nh.param("controller_lock_costmap", lock_costmap_, true);
 }
 

@@ -46,12 +46,13 @@
 namespace mbf_abstract_nav
 {
 
-MoveBaseAction::MoveBaseAction(const std::string &name,
+MoveBaseAction::MoveBaseAction(const ros::NodeHandle&, const ros::NodeHandle& nhp,
+                               const std::string &name,
                                const RobotInformation &robot_info,
                                const std::vector<std::string> &behaviors)
   :  oscillation_timeout_(0),
      oscillation_distance_(0),
-     name_(name), robot_info_(robot_info), private_nh_("~"),
+     name_(name), robot_info_(robot_info), private_nh_(nhp),
      action_client_exe_path_(private_nh_, "exe_path"),
      action_client_get_path_(private_nh_, "get_path"),
      action_client_recovery_(private_nh_, "recovery"),

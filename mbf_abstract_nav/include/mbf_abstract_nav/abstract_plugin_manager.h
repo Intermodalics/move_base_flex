@@ -40,6 +40,7 @@
 #define MBF_ABSTRACT_NAV__ABSTRACT_PLUGIN_MANAGER_H_
 
 #include <boost/function.hpp>
+#include <ros/node_handle.h>
 
 namespace mbf_abstract_nav{
 
@@ -52,6 +53,7 @@ class AbstractPluginManager
   typedef boost::function<bool (const std::string& name, const typename PluginType::Ptr& plugin_ptr)> initPluginFunction;
 
   AbstractPluginManager(
+      const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
       const std::string param_name,
       const loadPluginFunction& loadPlugin,
       const initPluginFunction& initPlugin
@@ -74,6 +76,9 @@ class AbstractPluginManager
   const std::string param_name_;
   const loadPluginFunction loadPlugin_;
   const initPluginFunction initPlugin_;
+
+  //! Private node handle
+  ros::NodeHandle private_nh_;
 };
 } /* namespace mbf_abstract_nav */
 

@@ -45,16 +45,16 @@ namespace mbf_costmap_nav
 {
 
 CostmapPlannerExecution::CostmapPlannerExecution(
+    const ros::NodeHandle& nh, const ros::NodeHandle& private_nh,
     const std::string name,
     const mbf_costmap_core::CostmapPlanner::Ptr &planner_ptr,
     CostmapPtr &costmap_ptr,
     const MoveBaseFlexConfig &config,
     boost::function<void()> setup_fn,
     boost::function<void()> cleanup_fn)
-      : AbstractPlannerExecution(name, planner_ptr, toAbstract(config), setup_fn, cleanup_fn),
+      : AbstractPlannerExecution(nh, private_nh, name, planner_ptr, toAbstract(config), setup_fn, cleanup_fn),
         costmap_ptr_(costmap_ptr)
 {
-  ros::NodeHandle private_nh("~");
   private_nh.param("planner_lock_costmap", lock_costmap_, true);
 }
 

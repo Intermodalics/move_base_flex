@@ -69,6 +69,7 @@ public:
    * @param local_costmap Shared pointer to the local costmap.
    */
   CostmapRecoveryExecution(
+      const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
       const std::string name,
       const mbf_costmap_core::CostmapRecovery::Ptr &recovery_ptr,
       const TFPtr &tf_listener_ptr,

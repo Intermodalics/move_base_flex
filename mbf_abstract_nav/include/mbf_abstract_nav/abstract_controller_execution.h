@@ -88,6 +88,7 @@ namespace mbf_abstract_nav
      * @param tf_listener_ptr Shared pointer to a common tf listener
      */
     AbstractControllerExecution(
+        const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
         const std::string name,
         const mbf_abstract_core::AbstractController::Ptr& controller_ptr,
         const ros::Publisher& vel_pub,

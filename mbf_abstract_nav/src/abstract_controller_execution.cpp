@@ -47,6 +47,7 @@ namespace mbf_abstract_nav
   const double AbstractControllerExecution::DEFAULT_CONTROLLER_FREQUENCY = 100.0; // 100 Hz
 
   AbstractControllerExecution::AbstractControllerExecution(
+      const ros::NodeHandle&, const ros::NodeHandle& private_nh,
       const std::string name,
       const mbf_abstract_core::AbstractController::Ptr& controller_ptr,
       const ros::Publisher& vel_pub,
@@ -62,9 +63,6 @@ namespace mbf_abstract_nav
       vel_pub_(vel_pub), current_goal_pub_(goal_pub),
       state_(INITIALIZED), moving_(false)
   {
-    ros::NodeHandle nh;
-    ros::NodeHandle private_nh("~");
-
     // non-dynamically reconfigurable parameters
     private_nh.param("robot_frame", robot_frame_, std::string("base_link"));
     private_nh.param("map_frame", global_frame_, std::string("map"));

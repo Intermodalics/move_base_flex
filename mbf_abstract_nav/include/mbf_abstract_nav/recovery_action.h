@@ -56,7 +56,8 @@ class RecoveryAction : public AbstractAction<mbf_msgs::RecoveryAction, AbstractR
 
   typedef boost::shared_ptr<RecoveryAction> Ptr;
 
-  RecoveryAction(const std::string& name, const RobotInformation &robot_info);
+  RecoveryAction(const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
+                 const std::string& name, const RobotInformation &robot_info);
 
   void run(GoalHandle &goal_handle, AbstractRecoveryExecution &execution);
 

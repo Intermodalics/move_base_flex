@@ -46,21 +46,21 @@ namespace mbf_abstract_nav{
 
 template <typename PluginType>
 AbstractPluginManager<PluginType>::AbstractPluginManager(
+    const ros::NodeHandle &, const ros::NodeHandle &nhp,
     const std::string param_name,
     const loadPluginFunction& loadPlugin,
     const initPluginFunction& initPlugin
 )
-  : param_name_(param_name), loadPlugin_(loadPlugin), initPlugin_(initPlugin)
+  : param_name_(param_name), loadPlugin_(loadPlugin), initPlugin_(initPlugin),
+    private_nh_(nhp)
 {
 }
 
 template <typename PluginType>
 bool AbstractPluginManager<PluginType>::loadPlugins()
 {
-  ros::NodeHandle private_nh("~");
-
   XmlRpc::XmlRpcValue plugin_param_list;
-  if(!private_nh.getParam(param_name_, plugin_param_list))
+  if(!private_nh_.getParam(param_name_, plugin_param_list))
   {
     ROS_WARN_STREAM("No " << param_name_ << " plugins configured! - Use the param \"" << param_name_ << "\", "
         "which must be a list of tuples with a name and a type.");

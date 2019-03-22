@@ -44,9 +44,11 @@ namespace mbf_abstract_nav{
 
 
 ControllerAction::ControllerAction(
+    const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
     const std::string &action_name,
     const RobotInformation &robot_info)
-    : AbstractAction(action_name, robot_info, boost::bind(&mbf_abstract_nav::ControllerAction::run, this, _1, _2))
+    : AbstractAction(action_name, robot_info, boost::bind(&mbf_abstract_nav::ControllerAction::run, this, _1, _2)),
+      private_nh_(nhp)
 {
 }
 
@@ -106,14 +108,12 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
 {
   ROS_DEBUG_STREAM_NAMED(name_, "Start action "  << name_);
 
-  ros::NodeHandle private_nh("~");
-
   double oscillation_timeout_tmp;
-  private_nh.param("oscillation_timeout", oscillation_timeout_tmp, 0.0);
+  private_nh_.param("oscillation_timeout", oscillation_timeout_tmp, 0.0);
   ros::Duration oscillation_timeout(oscillation_timeout_tmp);
 
   double oscillation_distance;
-  private_nh.param("oscillation_distance", oscillation_distance, 0.03);
+  private_nh_.param("oscillation_distance", oscillation_distance, 0.03);
 
   mbf_msgs::ExePathResult result;
   mbf_msgs::ExePathFeedback feedback;

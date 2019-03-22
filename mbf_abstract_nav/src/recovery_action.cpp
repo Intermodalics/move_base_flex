@@ -42,7 +42,9 @@
 
 namespace mbf_abstract_nav{
 
-RecoveryAction::RecoveryAction(const std::string &name, const RobotInformation &robot_info)
+RecoveryAction::RecoveryAction(
+    const ros::NodeHandle&, const ros::NodeHandle&,
+    const std::string &name, const RobotInformation &robot_info)
   : AbstractAction(name, robot_info, boost::bind(&mbf_abstract_nav::RecoveryAction::run, this, _1, _2)){}
 
 void RecoveryAction::run(GoalHandle &goal_handle, AbstractRecoveryExecution &execution)

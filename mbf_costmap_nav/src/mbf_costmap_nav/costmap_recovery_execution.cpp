@@ -45,6 +45,7 @@ namespace mbf_costmap_nav
 {
 
 CostmapRecoveryExecution::CostmapRecoveryExecution(
+    const ros::NodeHandle& nh, const ros::NodeHandle& private_nh,
     const std::string name,
     const mbf_costmap_core::CostmapRecovery::Ptr &recovery_ptr,
     const TFPtr &tf_listener_ptr,
@@ -52,7 +53,7 @@ CostmapRecoveryExecution::CostmapRecoveryExecution(
     const MoveBaseFlexConfig &config,
     boost::function<void()> setup_fn,
     boost::function<void()> cleanup_fn)
-      : AbstractRecoveryExecution(name, recovery_ptr, tf_listener_ptr, toAbstract(config), setup_fn, cleanup_fn),
+      : AbstractRecoveryExecution(nh, private_nh, name, recovery_ptr, tf_listener_ptr, toAbstract(config), setup_fn, cleanup_fn),
         global_costmap_(global_costmap), local_costmap_(local_costmap)
 {
 }

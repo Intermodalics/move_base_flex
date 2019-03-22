@@ -117,7 +117,7 @@ mbf_abstract_nav::AbstractPlannerExecution::Ptr CostmapNavigationServer::newPlan
     const mbf_abstract_core::AbstractPlanner::Ptr plugin_ptr)
 {
   return boost::make_shared<mbf_costmap_nav::CostmapPlannerExecution>(
-      name,
+      nh_, private_nh_, name,
       boost::static_pointer_cast<mbf_costmap_core::CostmapPlanner>(plugin_ptr),
       boost::ref(global_costmap_ptr_),
       last_config_,
@@ -129,31 +129,52 @@ mbf_abstract_nav::AbstractControllerExecution::Ptr CostmapNavigationServer::newC
     const std::string name,
     const mbf_abstract_core::AbstractController::Ptr plugin_ptr)
 {
-  return boost::make_shared<mbf_costmap_nav::CostmapControllerExecution>(
-      name,
-      boost::static_pointer_cast<mbf_costmap_core::CostmapController>(plugin_ptr),
-      vel_pub_,
-      goal_pub_,
-      tf_listener_ptr_,
-      boost::ref(local_costmap_ptr_),
-      last_config_,
-      boost::bind(&CostmapNavigationServer::checkActivateCostmaps, this),
-      boost::bind(&CostmapNavigationServer::checkDeactivateCostmaps, this));
+//  return boost::make_shared<mbf_costmap_nav::CostmapControllerExecution>(
+//      nh_, private_nh_, name,
+//      boost::static_pointer_cast<mbf_costmap_core::CostmapController>(plugin_ptr),
+//      vel_pub_,
+//      goal_pub_,
+//      tf_listener_ptr_,
+//      boost::ref(local_costmap_ptr_),
+//      last_config_,
+//      boost::bind(&CostmapNavigationServer::checkActivateCostmaps, this),
+//      boost::bind(&CostmapNavigationServer::checkDeactivateCostmaps, this));
+  return mbf_abstract_nav::AbstractControllerExecution::Ptr(
+      new mbf_costmap_nav::CostmapControllerExecution(
+        nh_, private_nh_, name,
+        boost::static_pointer_cast<mbf_costmap_core::CostmapController>(plugin_ptr),
+        vel_pub_,
+        goal_pub_,
+        tf_listener_ptr_,
+        boost::ref(local_costmap_ptr_),
+        last_config_,
+        boost::bind(&CostmapNavigationServer::checkActivateCostmaps, this),
+        boost::bind(&CostmapNavigationServer::checkDeactivateCostmaps, this)));
 }
 
 mbf_abstract_nav::AbstractRecoveryExecution::Ptr CostmapNavigationServer::newRecoveryExecution(
     const std::string name,
     const mbf_abstract_core::AbstractRecovery::Ptr plugin_ptr)
 {
-  return boost::make_shared<mbf_costmap_nav::CostmapRecoveryExecution>(
-      name,
-      boost::static_pointer_cast<mbf_costmap_core::CostmapRecovery>(plugin_ptr),
-      tf_listener_ptr_,
-      boost::ref(global_costmap_ptr_),
-      boost::ref(local_costmap_ptr_),
-      last_config_,
-      boost::bind(&CostmapNavigationServer::checkActivateCostmaps, this),
-      boost::bind(&CostmapNavigationServer::checkDeactivateCostmaps, this));
+//  return boost::make_shared<mbf_costmap_nav::CostmapRecoveryExecution>(
+//      nh_, private_nh_, name,
+//      boost::static_pointer_cast<mbf_costmap_core::CostmapRecovery>(plugin_ptr),
+//      tf_listener_ptr_,
+//      boost::ref(global_costmap_ptr_),
+//      boost::ref(local_costmap_ptr_),
+//      last_config_,
+//      boost::bind(&CostmapNavigationServer::checkActivateCostmaps, this),
+//      boost::bind(&CostmapNavigationServer::checkDeactivateCostmaps, this));
+  return mbf_abstract_nav::AbstractRecoveryExecution::Ptr(
+      new mbf_costmap_nav::CostmapRecoveryExecution(
+        nh_, private_nh_, name,
+        boost::static_pointer_cast<mbf_costmap_core::CostmapRecovery>(plugin_ptr),
+        tf_listener_ptr_,
+        boost::ref(global_costmap_ptr_),
+        boost::ref(local_costmap_ptr_),
+        last_config_,
+        boost::bind(&CostmapNavigationServer::checkActivateCostmaps, this),
+        boost::bind(&CostmapNavigationServer::checkDeactivateCostmaps, this)));
 }
 
 mbf_abstract_core::AbstractPlanner::Ptr CostmapNavigationServer::loadPlannerPlugin(const std::string& planner_type)

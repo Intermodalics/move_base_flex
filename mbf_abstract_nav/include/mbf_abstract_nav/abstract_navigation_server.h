@@ -298,6 +298,9 @@ typedef boost::shared_ptr<dynamic_reconfigure::Server<mbf_abstract_nav::MoveBase
      */
     virtual void reconfigure(mbf_abstract_nav::MoveBaseFlexConfig &config, uint32_t level);
 
+    //! Public node handle
+    ros::NodeHandle nh_;
+
     //! Private node handle
     ros::NodeHandle private_nh_;
 

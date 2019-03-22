@@ -84,7 +84,8 @@ namespace mbf_abstract_nav
      * @brief Constructor
      * @param condition Thread sleep condition variable, to wake up connected threads
      */
-    AbstractPlannerExecution(const std::string name,
+    AbstractPlannerExecution(const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
+                             const std::string name,
                              const mbf_abstract_core::AbstractPlanner::Ptr planner_ptr,
                              const MoveBaseFlexConfig &config,
                              boost::function<void()> setup_fn,

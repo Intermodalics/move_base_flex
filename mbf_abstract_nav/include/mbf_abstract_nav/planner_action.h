@@ -57,6 +57,7 @@ class PlannerAction : public AbstractAction<mbf_msgs::GetPathAction, AbstractPla
   typedef boost::shared_ptr<PlannerAction> Ptr;
 
   PlannerAction(
+      const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
       const std::string& name,
       const RobotInformation &robot_info
   );

@@ -56,7 +56,8 @@ class ControllerAction :
 
   typedef boost::shared_ptr<ControllerAction> Ptr;
 
-  ControllerAction(const std::string &name,
+  ControllerAction(const ros::NodeHandle& nh, const ros::NodeHandle& nhp,
+                   const std::string &name,
                    const RobotInformation &robot_info);
 
   void start(
@@ -74,6 +75,9 @@ protected:
           uint32_t outcome, const std::string &message,
           const geometry_msgs::TwistStamped& current_twist);
 
+private:
+  //! Private node handle
+  ros::NodeHandle private_nh_;
 };
 }
 
